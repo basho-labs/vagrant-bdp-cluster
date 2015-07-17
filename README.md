@@ -13,7 +13,7 @@ Install Vagrant ( http://downloads.vagrantup.com/ )
 
 ## Clone repository
 ```bash
-$ git clone git@github.com:basho-labs/vagrant-bdp-cluster.git
+$ git clone git@github.com:paegun/vagrant-bdp-cluster.git
 $ cd vagrant-bdp-cluster
 ```
 
@@ -23,6 +23,9 @@ $ cp env-example.sh env.sh
 ```
 Within env.sh, set values accordingly. The example provides meaning for each.
 Since the download urls are not public, env.sh is intentionally not shared.
+```bash
+$ ./env.sh
+```
 
 ## Download BDP
 ```bash
@@ -174,9 +177,6 @@ update BDP download urls, destroy the existing vagrants, vagrant up, and
 apply the quickstart script.
 
 ## Support and Contributions
-Support and Contributions
-=========================
-
 **This tool is provided without support.** Definitely do not ever use this in
 production, it's strictlya development tool.
 
