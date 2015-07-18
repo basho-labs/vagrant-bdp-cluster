@@ -11,5 +11,9 @@ SPARK_MASTER_URL="spark://$VAGRANT_IPS"
 vagrant_names $TARGET_VM_COUNT
 for VAGRANT_NAME in $VAGRANT_NAMES; do
     vagrant ssh $VAGRANT_NAME -c "sudo data-platform-admin add-service-config my-spark-worker spark-worker MASTER_URL=\"$SPARK_MASTER_URL\""
+    EXIT_CODE=$?
+    if [[ $EXIT_CODE != 0 ]]; then
+        exit $EXIT_CODE
+    fi
     break
 done

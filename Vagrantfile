@@ -25,8 +25,19 @@ DOWNLOAD_BDP_EXTRAS_UBUNTU_FILE - filename containing bdp extras for ubuntu
 EOF
 end
 
-$target_vm_count = (ENV['TARGET_VM_COUNT'] || 3).to_i
-$target_vm = ENV['TARGET_VM'] || 'centos'
+def set_default_environment
+  ENV['TARGET_VM'] ||= 'centos'
+  ENV['TARGET_VM_COUNT'] ||= '3'
+  ENV['DOWNLOAD_JAVA_FILE'] ||= 'jdk-8.rpm'
+  ENV['DOWNLOAD_BDP_PACKAGE_CENTOS_FILE'] ||= "basho-data-platform.rpm"
+  ENV['DOWNLOAD_BDP_EXTRAS_CENTOS_FILE'] ||= "basho-data-platform-extras-centos.tar.gz"
+  ENV['DOWNLOAD_BDP_PACKAGE_UBUNTU_FILE'] ||= "basho-data-platform.deb"
+  ENV['DOWNLOAD_BDP_EXTRAS_UBUNTU_FILE'] ||= "basho-data-platform-extras-ubuntu.tar.gz"
+end
+set_default_environment
+
+$target_vm_count = ENV['TARGET_VM_COUNT'].to_i
+$target_vm = ENV['TARGET_VM']
 if $target_vm == 'centos'
   $vm_box = 'chef/centos-6.5'
 elsif $target_vm == 'ubuntu'
@@ -35,15 +46,6 @@ else
   raise usage
   exit 1
 end
-
-def set_default_environment
-  ENV['DOWNLOAD_JAVA_FILE'] || 'jdk-8.rpm'
-  ENV['DOWNLOAD_BDP_PACKAGE_CENTOS_FILE'] ||= "basho-data-platform.rpm"
-  ENV['DOWNLOAD_BDP_EXTRAS_CENTOS_FILE'] ||= "basho-data-platform-extras-centos.tar.gz"
-  ENV['DOWNLOAD_BDP_PACKAGE_UBUNTU_FILE'] ||= "basho-data-platform.deb"
-  ENV['DOWNLOAD_BDP_EXTRAS_UBUNTU_FILE'] ||= "basho-data-platform-extras-ubuntu.tar.gz"
-end
-set_default_environment
 
 def provisioning_script(opts = {})
   if $target_vm == 'centos'
@@ -203,6 +205,11 @@ Vagrant.configure(2) do |config|
       n.vm.synced_folder "downloads/", "/home/vagrant/downloads"
 
       n.vm.network "private_network", ip: opts[:ip_address]
+
+      # limit memory consumption
+      n.vm.provider "virtualbox" do |vb|
+        vb.memory = "2048"
+      end
 
       # port forwards
       # handoff

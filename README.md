@@ -24,7 +24,7 @@ $ cp env-example.sh env.sh
 Within env.sh, set values accordingly. The example provides meaning for each.
 Since the download urls are not public, env.sh is intentionally not shared.
 ```bash
-$ ./env.sh
+$ . env.sh
 ```
 
 ## Download BDP
