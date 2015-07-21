@@ -92,7 +92,9 @@ if [[ $(which data-platform-admin) == "" ]]; then
   echo "installing bdp beta 1"
   cd $DIR/downloads
   sudo yum -y --nogpgcheck --noplugins localinstall "#{download_bdp_package_file}"
-  tar zxvf "#{download_bdp_extras_file}"
+  if [[ ! -d basho-data-platform-1.0.0-beta-1-CENTOS ]]; then
+    tar xzf "#{download_bdp_extras_file}"
+  fi
   cd basho-data-platform-1.0.0-beta-1-CENTOS
   sudo ./install.sh
   cd $DIR
@@ -161,7 +163,9 @@ if [[ $(which data-platform-admin) == "" ]]; then
   echo "installing bdp beta 1"
   cd $DIR/downloads
   sudo dpkg -i "#{download_bdp_package_file}"
-  tar zxvf "#{download_bdp_extras_file}"
+  if [[ ! -d data-platform-extras-beta-1-UBUNTU.12.04 ]]; then
+    tar xzf "#{download_bdp_extras_file}"
+  fi
   cd data-platform-extras-beta-1-UBUNTU.12.04
   sudo ./install.sh
   cd $DIR
