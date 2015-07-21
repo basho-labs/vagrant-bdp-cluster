@@ -4,4 +4,6 @@
 # downloads
 downloads/*
 !downloads/.keep
+logs/*
+!logs/.keep
 env.sh

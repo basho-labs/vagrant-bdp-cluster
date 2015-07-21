@@ -10,6 +10,7 @@ BDP services include:
 
 ## Configuration
 Install Vagrant ( http://downloads.vagrantup.com/ )
+[Optional] Install parallel, otherwise installed via bin/provision.sh
 
 ## Clone repository
 ```bash
@@ -33,9 +34,17 @@ $ ./bin/download.sh
 ```
 
 ## Provision
+To expedite provisioning, GNU parallel is used to parallelize the provisioning
+step of the vagrant up.
 ```bash
-$ vagrant up
+$ ./bin/provision.sh
 ```
+
+With parallel provisioning, provisioning and quickstarting a 3 node cluster
+on an i7 (4 cores, 2.8 Ghz, 16 GB RAM) machine  was tested to complete in:
+provisioning - 2m23.430s
+quickstart   - 2m51.062s
+
 Post-provisioning, either follow the Quickstart path or perform the quickstart
 steps one-by-one, starting at Create Riak Cluster.
 
