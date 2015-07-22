@@ -14,7 +14,7 @@ Install Vagrant ( http://downloads.vagrantup.com/ )
 
 ## Clone repository
 ```bash
-$ git clone git@github.com:basho-bin/vagrant-bdp-cluster.git
+$ git clone git@github.com:basho-labs/vagrant-bdp-cluster.git
 $ cd vagrant-bdp-cluster
 ```
 
