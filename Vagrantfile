@@ -15,31 +15,37 @@ TARGET_VM - determines the OS, defaults to 'centos', supports the following:
 TARGET_VM_COUNT - determines the number of VM's defaults to 3.
 
 DOWNLOAD_BDP_PACKAGE_CENTOS_FILE - filename containing bdp package for centos
-                                   defaults to basho-data-platform.rpm
+                                   defaults to basho-data-platform-CENTOS.rpm
 DOWNLOAD_BDP_EXTRAS_CENTOS_FILE - filename containing bdp extras for centos
-                                  defaults to basho-data-platform-extras-centos.tar.gz
+                                  defaults to basho-data-platform-extras-CENTOS.rpm
 DOWNLOAD_BDP_PACKAGE_UBUNTU_FILE - filename containing bdp package for ubuntu
-                                   defaults to basho-data-platform.deb
+                                   defaults to basho-data-platform-UBUNTU.deb
 DOWNLOAD_BDP_EXTRAS_UBUNTU_FILE - filename containing bdp extras for ubuntu
-                                  defaults to basho-data-platform-extras-ubuntu.tar.gz
+                                  defaults to basho-data-platform-extras-UBUNTU.deb
 EOF
 end
 
 def set_default_environment
   ENV['TARGET_VM'] ||= 'centos'
+  ENV['TARGET_VM_VARIANT'] ||= '7'
   ENV['TARGET_VM_COUNT'] ||= '3'
   ENV['DOWNLOAD_JAVA_FILE'] ||= 'jdk-8.rpm'
-  ENV['DOWNLOAD_BDP_PACKAGE_CENTOS_FILE'] ||= "basho-data-platform.rpm"
-  ENV['DOWNLOAD_BDP_EXTRAS_CENTOS_FILE'] ||= "basho-data-platform-extras-centos.tar.gz"
-  ENV['DOWNLOAD_BDP_PACKAGE_UBUNTU_FILE'] ||= "basho-data-platform.deb"
-  ENV['DOWNLOAD_BDP_EXTRAS_UBUNTU_FILE'] ||= "basho-data-platform-extras-ubuntu.tar.gz"
+  ENV['DOWNLOAD_BDP_PACKAGE_CENTOS_FILE'] ||= "basho-data-platform-CENTOS.rpm"
+  ENV['DOWNLOAD_BDP_EXTRAS_CENTOS_FILE'] ||= "basho-data-platform-extras-CENTOS.rpm"
+  ENV['DOWNLOAD_BDP_PACKAGE_UBUNTU_FILE'] ||= "basho-data-platform-UBUNTU.deb"
+  ENV['DOWNLOAD_BDP_EXTRAS_UBUNTU_FILE'] ||= "basho-data-platform-extras-UBUNTU.deb"
 end
 set_default_environment
 
 $target_vm_count = ENV['TARGET_VM_COUNT'].to_i
 $target_vm = ENV['TARGET_VM']
+$target_vm_variant = ENV['TARGET_VM_VARIANT']
 if $target_vm == 'centos'
-  $vm_box = 'chef/centos-6.5'
+  if $target_vm_variant == '7'
+    $vm_box = 'chef/centos-7.0'
+  else
+    $vm_box = 'chef/centos-6.5'
+  end
 elsif $target_vm == 'ubuntu'
   $vm_box = 'chef/ubuntu-12.04'
 else
@@ -92,11 +98,12 @@ if [[ $(which data-platform-admin) == "" ]]; then
   echo "installing bdp beta 1"
   cd $DIR/downloads
   sudo yum -y --nogpgcheck --noplugins localinstall "#{download_bdp_package_file}"
-  if [[ ! -d basho-data-platform-1.0.0-beta-1-CENTOS ]]; then
-    tar xzf "#{download_bdp_extras_file}"
+  if [[ -d basho-data-platform-extras-CENTOS ]]; then
+    cd basho-data-platform-extras-CENTOS
+    sudo ./install.sh
+  else
+    sudo yum -y --nogpgcheck --noplugins localinstall "#{download_bdp_extras_file}"
   fi
-  cd basho-data-platform-1.0.0-beta-1-CENTOS
-  sudo ./install.sh
   cd $DIR
 
   # configure spark master
@@ -114,9 +121,10 @@ if [[ $(which data-platform-admin) == "" ]]; then
   sudo bash -c "echo 'listener.leader_latch.internal = #{ip_address}:5323' >> /etc/riak/riak.conf"
   sudo bash -c "echo 'listener.leader_latch.external = #{ip_address}:15323' >> /etc/riak/riak.conf"
 
-  echo "starting riak"
-  chkconfig riak on
+  echo "restarting Riak"
+  sudo service riak stop
   sudo service riak start
+
   BDP_HOME=$(dirname $(which data-platform-admin))
   echo "BDP installed, BDP home: $BDP_HOME"
 fi
@@ -163,11 +171,12 @@ if [[ $(which data-platform-admin) == "" ]]; then
   echo "installing bdp beta 1"
   cd $DIR/downloads
   sudo dpkg -i "#{download_bdp_package_file}"
-  if [[ ! -d data-platform-extras-beta-1-UBUNTU.12.04 ]]; then
-    tar xzf "#{download_bdp_extras_file}"
+  if [[ -d data-platform-extras-UBUNTU ]]; then
+    cd data-platform-extras-UBUNTU
+    sudo ./install.sh
+  else
+    sudo dpkg -i "#{download_bdp_extras_file}"
   fi
-  cd data-platform-extras-beta-1-UBUNTU.12.04
-  sudo ./install.sh
   cd $DIR
 
   # configure spark master
@@ -185,9 +194,10 @@ if [[ $(which data-platform-admin) == "" ]]; then
   sudo bash -c "echo 'listener.leader_latch.internal = #{ip_address}:5323' >> /etc/riak/riak.conf"
   sudo bash -c "echo 'listener.leader_latch.external = #{ip_address}:15323' >> /etc/riak/riak.conf"
 
-  echo "starting riak"
-  update-rc.d riak defaults
+  echo "restarting Riak"
+  sudo service riak stop
   sudo service riak start
+
   BDP_HOME=$(dirname $(which data-platform-admin))
   echo "BDP installed, BDP home: $BDP_HOME"
 fi

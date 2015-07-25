@@ -11,6 +11,8 @@ fi
 
 # target vm box type, supports: centos or ubuntu, default: centos
 export TARGET_VM=${TARGET_VM:-"centos"}
+# target vm variant, supports: for centos 6.5 or 7, for ubuntu 12.04, default: ""
+export TARGET_VM_VARIANT=${TARGET_VM_VARIANT:-""}
 # target vm count, supports: 1..as much as your hardware allows, default: 3
 export TARGET_VM_COUNT=${TARGET_VM_COUNT:-1}
 # url for the bdp rpm package for centos
