@@ -30,13 +30,30 @@ assert_exit "create riak cluster"
 echo "test the riak cluster"
 ./bin/riak_test.sh
 assert_exit "test riak cluster"
+
 echo "create the bdp cluster"
-./bin/bdp_cluster_create.sh
+RETRIES=60
+while [[ $RETRIES > 0 ]]; do
+    OUTPUT=$(./bin/bdp_cluster_create.sh)
+    EXIT_CODE=$?
+    if [[ $OUTPUT =~ "Node joined" ]]; then
+        let RETRIES-=1
+        printf "."
+        sleep 1
+    else
+        RETRIES=0
+        echo ""
+    fi
+done
+if [[ $EXIT_CODE != 0 ]]; then
+    (exit $EXIT_CODE)
+fi
 assert_exit "create bdp cluster"
+
 echo "verify the bdp cluster is established"
 RETRIES=60 #<< experiencing 25-30s periods of 
 while [[ $RETRIES > 0 ]]; do
-    # NOTE: intentionally freshly loggin output to only emit the last run below
+    # NOTE: intentionally freshly logging output to only emit the last run below
     ./bin/bdp_service_status.sh >bdp_service_status.log 2>&1
     EXIT_CODE=$?
     if [[ $EXIT_CODE == 0 ]]; then
@@ -57,7 +74,21 @@ fi
 
 echo "create bdp core service configurations"
 for i in `ls bin/*service_config_create.sh`;do
-    ./$i
+    RETRIES=60
+    EXIT_CODE=0
+    while [[ $RETRIES > 0 ]]; do
+        OUTPUT=$(./$i)
+        EXIT_CODE=$?
+        if [[ $OUTPUT =~ 'failed!' ]]; then
+            let RETRIES-=1
+            printf "."
+            sleep 1
+        else
+            RETRIES=0
+            echo ""
+        fi
+    done
+    $(exit $EXIT_CODE)
     assert_exit "creating service config $i"
 done
 echo "verify bdp service configurations were created"

@@ -171,11 +171,11 @@ if [[ $(which data-platform-admin) == "" ]]; then
   echo "installing bdp beta 1"
   cd $DIR/downloads
   sudo dpkg -i "#{download_bdp_package_file}"
-  if [[ -d data-platform-extras-UBUNTU ]]; then
-    cd data-platform-extras-UBUNTU
+  if [[ -d basho-data-platform-extras-UBUNTU ]]; then
+    cd basho-data-platform-extras-UBUNTU
     sudo ./install.sh
   else
-    sudo dpkg -i "#{download_bdp_extras_file}"
+    sudo dpkg -i --force-overwrite "#{download_bdp_extras_file}"
   fi
   cd $DIR
 
