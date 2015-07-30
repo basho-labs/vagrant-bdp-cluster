@@ -76,7 +76,7 @@ function process_pid () {
     local SERVICE_CONFIG=$2
 
     ps_line $VAGRANT_NAME_ $SERVICE_CONFIG
-    PROCESS_PID=$(echo $PS_LINE |cut -d ' ' -f 2)
+    PROCESS_PID=$(echo $PS_LINE |awk '{print $2}')
 }
 
 function kill_service_process () {
