@@ -41,7 +41,7 @@ function riak_node_name () {
     RIAK_NODE_NAME="riak_bdp_$NODE_NUMBER@$VAGRANT_IP"
 }
 function riak_pb_port () {
-    RIAK_PB_PORT=${RIAK_PB_PORT:-8097}
+    RIAK_PB_PORT=${RIAK_PB_PORT:-8087}
 }
 function riak_http_port () {
     RIAK_HTTP_PORT=${RIAK_HTTP_PORT:-8098}
