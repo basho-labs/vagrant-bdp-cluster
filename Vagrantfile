@@ -102,7 +102,15 @@ if [[ $(which data-platform-admin) == "" ]]; then
     cd basho-data-platform-extras-CENTOS
     sudo ./install.sh
   else
-    sudo yum -y --nogpgcheck --noplugins localinstall "#{download_bdp_extras_file}"
+    sudo rpm --replacefiles -i "#{download_bdp_extras_file}"
+    if [[ ! -d "#{bdp_path}/priv/spark-master/logs/" ]]; then
+      sudo mkdir "#{bdp_path}/priv/spark-master/logs"
+      sudo chown riak:riak "#{bdp_path}/priv/spark-master/logs"
+      sudo mkdir "#{bdp_path}/priv/spark-worker/logs"
+      sudo chown riak:riak "#{bdp_path}/priv/spark-worker/logs"
+      sudo mkdir "#{bdp_path}/priv/spark-worker/work"
+      sudo chown riak:riak "#{bdp_path}/priv/spark-worker/work"
+    fi 
   fi
   cd $DIR
 
@@ -176,6 +184,14 @@ if [[ $(which data-platform-admin) == "" ]]; then
     sudo ./install.sh
   else
     sudo dpkg -i --force-overwrite "#{download_bdp_extras_file}"
+    if [[ ! -d "#{bdp_path}/priv/spark-master/logs/" ]]; then
+      sudo mkdir "#{bdp_path}/priv/spark-master/logs"
+      sudo chown riak:riak "#{bdp_path}/priv/spark-master/logs"
+      sudo mkdir "#{bdp_path}/priv/spark-worker/logs"
+      sudo chown riak:riak "#{bdp_path}/priv/spark-worker/logs"
+      sudo mkdir "#{bdp_path}/priv/spark-worker/work"
+      sudo chown riak:riak "#{bdp_path}/priv/spark-worker/work"
+    fi
   fi
   cd $DIR
 
@@ -232,6 +248,10 @@ Vagrant.configure(2) do |config|
       n.vm.network "forwarded_port", guest: 8098, host: "5#{opts[:node_number]}098".to_i, auto_correct: true
       # pb
       n.vm.network "forwarded_port", guest: 8087, host: "5#{opts[:node_number]}087".to_i, auto_correct: true
+
+      # ssh port forwards
+      n.vm.network "forwarded_port", guest: 22, host: 2222, id: "ssh", disabled: true
+      n.vm.network "forwarded_port", guest: 22, host: "5#{opts[:node_number]}088".to_i, auto_correct: true
 
       n.vm.provision "shell", inline: provisioning_script(opts)
     end
