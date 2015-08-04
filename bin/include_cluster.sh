@@ -50,13 +50,13 @@ function riak_leader_election_port () {
     RIAK_LEADER_ELECTION_PORT=${RIAK_LEADER_ELECTION_PORT:-5323}
 }
 function spark_master_port () {
-    SPARK_MASTER_PORT=${SPARK_MASTER_PORT:-7777}
+    SPARK_MASTER_PORT=${SPARK_MASTER_PORT:-7077}
 }
 function redis_port () {
     REDIS_PORT=${REDIS_PORT:-6379}
 }
 function cache_proxy_port () {
-    CACHE_PROXY_PORT=${CACHE_PROXY_PORT:-11211}
+    CACHE_PROXY_PORT=${CACHE_PROXY_PORT:-22122}
 }
 function cache_proxy_stats_port () {
     CACHE_PROXY_STATS_PORT=${CACHE_PROXY_STATS_PORT:-22223}
