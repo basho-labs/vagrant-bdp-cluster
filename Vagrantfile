@@ -102,15 +102,7 @@ if [[ $(which data-platform-admin) == "" ]]; then
     cd basho-data-platform-extras-CENTOS
     sudo ./install.sh
   else
-    sudo rpm --replacefiles -i "#{download_bdp_extras_file}"
-    if [[ ! -d "#{bdp_path}/priv/spark-master/logs/" ]]; then
-      sudo mkdir "#{bdp_path}/priv/spark-master/logs"
-      sudo chown riak:riak "#{bdp_path}/priv/spark-master/logs"
-      sudo mkdir "#{bdp_path}/priv/spark-worker/logs"
-      sudo chown riak:riak "#{bdp_path}/priv/spark-worker/logs"
-      sudo mkdir "#{bdp_path}/priv/spark-worker/work"
-      sudo chown riak:riak "#{bdp_path}/priv/spark-worker/work"
-    fi 
+    sudo rpm -i "#{download_bdp_extras_file}"
   fi
   cd $DIR
 
@@ -183,15 +175,7 @@ if [[ $(which data-platform-admin) == "" ]]; then
     cd basho-data-platform-extras-UBUNTU
     sudo ./install.sh
   else
-    sudo dpkg -i --force-overwrite "#{download_bdp_extras_file}"
-    if [[ ! -d "#{bdp_path}/priv/spark-master/logs/" ]]; then
-      sudo mkdir "#{bdp_path}/priv/spark-master/logs"
-      sudo chown riak:riak "#{bdp_path}/priv/spark-master/logs"
-      sudo mkdir "#{bdp_path}/priv/spark-worker/logs"
-      sudo chown riak:riak "#{bdp_path}/priv/spark-worker/logs"
-      sudo mkdir "#{bdp_path}/priv/spark-worker/work"
-      sudo chown riak:riak "#{bdp_path}/priv/spark-worker/work"
-    fi
+    sudo dpkg -i "#{download_bdp_extras_file}"
   fi
   cd $DIR
 
