@@ -52,6 +52,15 @@ function riak_leader_election_port () {
 function spark_master_port () {
     SPARK_MASTER_PORT=${SPARK_MASTER_PORT:-7077}
 }
+function spark_master_webui_port () {
+    SPARK_MASTER_WEBUI_PORT=${SPARK_MASTER_WEBUI_PORT:-8080}
+}
+function spark_worker_port () {
+    SPARK_WORKER_PORT=${SPARK_WORKER_PORT:-7078}
+}
+function spark_worker_webui_port () {
+    SPARK_WORKER_WEBUI_PORT=${SPARK_WORKER_WEBUI_PORT:-8081}
+}
 function redis_port () {
     REDIS_PORT=${REDIS_PORT:-6379}
 }

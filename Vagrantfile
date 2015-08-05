@@ -90,6 +90,10 @@ if [[ $(which javac) == "" ]]; then
   echo "installing jdk 8"
   sudo yum -y localinstall "$DIR/downloads/#{download_java_file}"
   JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+  if [[ "$JAVA_HOME" == "" ]]; then
+    echo "failed to install jdk 8"
+    exit 1
+  fi
   grep JAVA_HOME /etc/environment >/dev/null 2>&1 || test $? -ne 0 && sudo bash -c "echo JAVA_HOME=$JAVA_HOME >>/etc/environment"
   echo "jdk 8 installed, JAVA_HOME: $JAVA_HOME"
 fi
@@ -162,6 +166,10 @@ if [[ $(which javac) == "" ]]; then
   sudo echo -e oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
   sudo apt-get install -y oracle-java8-installer >/dev/null 2>&1
   JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+  if [[ "$JAVA_HOME" == "" ]]; then
+    echo "failed to install jdk 8"
+    exit 1
+  fi
   grep JAVA_HOME /etc/environment >/dev/null 2>&1 || test $? -ne 0 && sudo bash -c "echo JAVA_HOME=$JAVA_HOME >>/etc/environment"
   echo "jdk 8 installed, JAVA_HOME: $JAVA_HOME"
 fi
