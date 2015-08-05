@@ -9,8 +9,10 @@ usage: TARGET_VM=centos TARGET_VM_COUNT=3 vagrant up
 
 Environment Variables:
 TARGET_VM - determines the OS, defaults to 'centos', supports the following:
-  centos - Centos 6.5
-  ubuntu - Ubuntu 12.04
+  centos - CentOS 6.5 "6"
+           CentOS 7.0 "7"
+  ubuntu - Ubuntu 12.04 "precise"
+           Ubuntu 14.04 "trusty"
 
 TARGET_VM_COUNT - determines the number of VM's defaults to 3.
 
@@ -47,7 +49,11 @@ if $target_vm == 'centos'
     $vm_box = 'chef/centos-6.5'
   end
 elsif $target_vm == 'ubuntu'
-  $vm_box = 'chef/ubuntu-12.04'
+  if $target_vm_variant == 'trusty'
+    $vm_box = 'chef/ubuntu-14.04'
+  else
+    $vm_box = 'chef/ubuntu-12.04'
+  end
 else
   raise usage
   exit 1
@@ -99,7 +105,7 @@ if [[ $(which javac) == "" ]]; then
 fi
 # install bdp
 if [[ $(which data-platform-admin) == "" ]]; then
-  echo "installing bdp beta 1"
+  echo "installing bdp"
   cd $DIR/downloads
   sudo yum -y --nogpgcheck --noplugins localinstall "#{download_bdp_package_file}"
   if [[ -d basho-data-platform-extras-CENTOS ]]; then
@@ -107,6 +113,10 @@ if [[ $(which data-platform-admin) == "" ]]; then
     sudo ./install.sh
   else
     sudo rpm -i "#{download_bdp_extras_file}"
+    if [[ "$?" != "0" ]]; then
+        echo "the bdp extras package failed to install"
+        exit 1
+    fi
   fi
   cd $DIR
 
@@ -159,8 +169,19 @@ if [[ $(which javac) == "" ]]; then
   echo "installing jdk 8"
   # properties packages are for add-apt-repository
   # debconf-utils is to accept the java license
-  sudo apt-get install -y software-properties-common python-software-properties debconf-utils
-  sudo add-apt-repository ppa:webupd8team/java
+  RETRIES=3
+  while [[ $RETRIES > 0 ]]; do
+    sudo apt-get install -y software-properties-common python3-software-properties python-software-properties debconf-utils
+    if [[ "$?" == "0" ]]; then
+      RETRIES=0
+    else
+      let RETRIES-=1
+      echo "retrying install of software-properties"
+      sudo apt-get update
+    fi
+  done
+
+  echo "" |sudo add-apt-repository ppa:webupd8team/java
   sudo apt-get update
   # accept java license
   sudo echo -e oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
@@ -176,7 +197,7 @@ fi
 
 # install bdp
 if [[ $(which data-platform-admin) == "" ]]; then
-  echo "installing bdp beta 1"
+  echo "installing bdp"
   cd $DIR/downloads
   sudo dpkg -i "#{download_bdp_package_file}"
   if [[ -d basho-data-platform-extras-UBUNTU ]]; then
@@ -184,6 +205,10 @@ if [[ $(which data-platform-admin) == "" ]]; then
     sudo ./install.sh
   else
     sudo dpkg -i "#{download_bdp_extras_file}"
+    if [[ "$?" != "0" ]]; then
+        echo "the bdp extras package failed to install"
+        exit 1
+    fi
   fi
   cd $DIR
 
