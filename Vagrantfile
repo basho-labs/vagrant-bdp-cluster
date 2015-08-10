@@ -79,6 +79,13 @@ def provisioning_script_centos(opts = {})
 
 <<EOF
 DIR=$PWD
+
+# verify packages are downloaded
+if [[ ! -e "$DIR/downloads/#{download_bdp_package_file}" ]]; then
+  echo "This vagrant setup requires configuration of download urls, see README.md for further details."
+  exit 1
+fi
+
 # increase open file limit
 if [[ $(sysctl fs.file-max |grep 65536) == "" ]]; then
   sudo sysctl fs.file-max=65536
@@ -155,6 +162,12 @@ def provisioning_script_ubuntu(opts = {})
 
 <<EOF
 DIR=$PWD
+# verify packages are downloaded
+if [[ ! -e "$DIR/downloads/#{download_bdp_package_file}" ]]; then
+  echo "This vagrant setup requires configuration of download urls, see README.md for further details."
+  exit 1
+fi
+
 # increase open file limit
 if [[ $(sysctl fs.file-max |grep 65536) == "" ]]; then
   sudo bash -c "cat <<EOF_LIMITS >> /etc/security/limits.conf
@@ -171,7 +184,7 @@ if [[ $(which javac) == "" ]]; then
   # debconf-utils is to accept the java license
   RETRIES=3
   while [[ $RETRIES > 0 ]]; do
-    sudo apt-get install -y software-properties-common python3-software-properties python-software-properties debconf-utils
+    sudo apt-get install -y software-properties-common python-software-properties debconf-utils
     if [[ "$?" == "0" ]]; then
       RETRIES=0
     else
@@ -238,6 +251,8 @@ EOF
   # NOTE: joining the cluster must be done after provisioning all boxes, so use bin/create_riak_cluster.sh
 end
 
+# ensure download has been run, it's re-entrant
+system('./bin/download.sh')
 Vagrant.configure(2) do |config|
   (1..$target_vm_count).each do |node_number|
     opts = {

@@ -1,6 +1,7 @@
 #! /bin/bash
 TARGET_VM_COUNT=${TARGET_VM_COUNT:-3}
 CONTROL_COMMAND=$1
+TARGET_VAGRANT_NAME=$2
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$DIR/include_cluster.sh"
@@ -43,6 +44,10 @@ esac
 
 vagrant_names $TARGET_VM_COUNT
 for VAGRANT_NAME in $VAGRANT_NAMES; do
+    if [[ "$TARGET_VAGRANT_NAME" != "" && "$TARGET_VAGRANT_NAME" != "$VAGRANT_NAME" ]]; then
+        continue
+    fi
+
     vagrant ssh $VAGRANT_NAME -c "sudo $RIAK_EXE $CONTROL_COMMAND"
     if [[ $ONCE != "" ]]; then break; fi
 done

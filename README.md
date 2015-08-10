@@ -2,6 +2,11 @@
 This is a Vagrant project using shell provisioning to bring up a cluster of
 TARGET_VM_COUNT Riak nodes, ready to manage services using the BDP.
 
+Basho Data Platform (BDP) is not yet public.  More information regarding BDP is
+available, see http://basho.com/basho-data-platform/ .  The remainder of this
+setup assumes that you have been provided download links as part of an
+early access evaluation.
+
 BDP services include:
  * Riak        - Persistent data store
  * Spark       - Data analysis

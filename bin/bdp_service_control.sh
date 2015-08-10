@@ -3,6 +3,7 @@ TARGET_VM_COUNT=${TARGET_VM_COUNT:-3}
 CONTROL_COMMAND=$1
 SERVICE_GROUP=$2
 SERVICE_CONFIG=$3
+TARGET_VAGRANT_NAME=$4
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$DIR/include_cluster.sh"
@@ -95,6 +96,11 @@ PIDS_MISSING=0
 for VAGRANT_NAME in $VAGRANT_NAMES; do
     let NODE_NUMBER+=1
     riak_node_name $NODE_NUMBER
+
+    if [[ "$TARGET_VAGRANT_NAME" != "" && "$TARGET_VAGRANT_NAME" != "$VAGRANT_NAME" ]]; then
+        continue
+    fi
+
     if [[ $CONTROL_COMMAND == "get-pid" ]]; then
         process_pid $VAGRANT_NAME $SERVICE_CONFIG
         if [[ $PROCESS_PID == "" ]]; then
@@ -106,10 +112,6 @@ for VAGRANT_NAME in $VAGRANT_NAMES; do
         EXIT_CODE=$?
         if [[ $EXIT_CODE != 0 ]]; then
             exit $EXIT_CODE
-        fi
-        # HACK: service stop does not stop the running process
-        if [[ $CONTROL_COMMAND == "stop-service" ]]; then
-            kill_service_process $VAGRANT_NAME $SERVICE_CONFIG
         fi
     fi
 done
