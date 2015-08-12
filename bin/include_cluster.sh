@@ -74,3 +74,12 @@ function cache_ttl () {
     CACHE_TTL=${CACHE_TTL:-"15s"}
 }
 
+case $TARGET_VM in
+    centos)
+        BDP_PRIV="/usr/lib64/riak/lib/data_platform-1/priv"
+        ;;
+    default)
+        BDP_PRIV="/usr/lib/riak/lib/data_platform-1/priv"
+        ;;
+esac
+

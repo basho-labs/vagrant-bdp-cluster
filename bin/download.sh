@@ -70,7 +70,7 @@ DOWNLOAD_BDP_PACKAGE_UBUNTU_FILE="$DIR/../downloads/$DOWNLOAD_BDP_PACKAGE_UBUNTU
 DOWNLOAD_BDP_EXTRAS_UBUNTU_FILE="$DIR/../downloads/$DOWNLOAD_BDP_EXTRAS_UBUNTU_FILE"
 
 # centos
-if [[ ! -e "$DOWNLOAD_JAVA_FILE" ]]; then
+if [[ ! -e "$DOWNLOAD_JAVA_FILE" && "$DOWNLOAD_JAVA_URL" != "" ]]; then
     wget -O "$DOWNLOAD_JAVA_FILE" --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "$DOWNLOAD_JAVA_URL"
     if [[ $? != 0 ]]; then
         echo "failed to download jdk 8 package"
@@ -78,7 +78,7 @@ if [[ ! -e "$DOWNLOAD_JAVA_FILE" ]]; then
     fi
 fi
 
-if [[ ! -e "$DOWNLOAD_BDP_PACKAGE_CENTOS_FILE" ]]; then
+if [[ ! -e "$DOWNLOAD_BDP_PACKAGE_CENTOS_FILE" && "$DOWNLOAD_BDP_PACKAGE_CENTOS_URL" != "" ]]; then
     wget -O "$DOWNLOAD_BDP_PACKAGE_CENTOS_FILE" "$DOWNLOAD_BDP_PACKAGE_CENTOS_URL"
     if [[ $? != 0 ]]; then
         echo "failed to download bdp package for centos"
@@ -99,7 +99,7 @@ if [[ "$URL_EXTENSION" == "tar.gz" ]]; then
 fi
 
 # ubuntu
-if [[ ! -e "$DOWNLOAD_BDP_PACKAGE_UBUNTU_FILE" ]]; then
+if [[ ! -e "$DOWNLOAD_BDP_PACKAGE_UBUNTU_FILE" && "$DOWNLOAD_BDP_PACKAGE_UBUNTU_URL" != "" ]]; then
     wget -O "$DOWNLOAD_BDP_PACKAGE_UBUNTU_FILE" "$DOWNLOAD_BDP_PACKAGE_UBUNTU_URL"
     if [[ $? != 0 ]]; then
         echo "failed to download bdp package for ubuntu"
