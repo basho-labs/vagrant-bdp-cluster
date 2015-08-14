@@ -9,3 +9,13 @@ function assert () {
     fi
     return 0
 }
+function assert_exit () {
+    local EXPECTED_VALUE=$1
+    local ACTUAL_VALUE=$2
+    local CONTEXT=${3:-debug}
+    assert "$EXPECTED_VALUE" "$ACTUAL_VALUE" "$CONTEXT"
+    local EXIT_CODE=$?
+    if [[ $EXIT_CODE != 0 ]]; then
+        exit $EXIT_CODE
+    fi
+}

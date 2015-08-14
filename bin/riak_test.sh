@@ -9,6 +9,7 @@ vagrant ssh riak1 -c "sudo riak-admin test"
 # Cluster is committed, ring is distributed evenly
 vagrant ssh riak1 -c "sudo riak-admin cluster status"
 # Riak HTTP interface is listening
+riak_delete "test" "foo"
 riak_get "test" "foo"
 assert "not found" "$RIAK_VALUE" "value at clean start"
 riak_put "test" "foo" "bar"
@@ -25,3 +26,4 @@ done
 riak_delete "test" "foo"
 riak_get "test" "foo"
 assert "not found" "$RIAK_VALUE" "value after delete"
+echo "Successfully tested Riak basic read/write"

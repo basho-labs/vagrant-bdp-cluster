@@ -12,9 +12,11 @@ riak_pb_port
 vagrant_ips $TARGET_VM_COUNT $RIAK_PB_PORT ','
 RIAK_KV_IPS="$VAGRANT_IPS"
 
+IP_LSD=1
 vagrant_names $TARGET_VM_COUNT
 for VAGRANT_NAME in $VAGRANT_NAMES; do
-    vagrant ssh $VAGRANT_NAME -c "sudo data-platform-admin add-service-config my-spark-master spark-master HOST=\"0.0.0.0\" LEAD_ELECT_SERVICE_HOSTS=\"$LEADER_ELECTION_SERVICE_IPS\" RIAK_HOSTS=\"$RIAK_KV_IPS\""
+    let IP_LSD+=1
+    vagrant ssh $VAGRANT_NAME -c "sudo data-platform-admin add-service-config my-spark-master spark-master LEAD_ELECT_SERVICE_HOSTS=\"$LEADER_ELECTION_SERVICE_IPS\" RIAK_HOSTS=\"$RIAK_KV_IPS\""
     EXIT_CODE=$?
     if [[ $EXIT_CODE != 0 ]]; then
         exit $EXIT_CODE

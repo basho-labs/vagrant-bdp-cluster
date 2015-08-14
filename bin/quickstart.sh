@@ -114,4 +114,5 @@ assert_exit "getting the pids for my-cache-proxy"
 assert_exit "getting the pids for my-spark-master"
 ./bin/bdp_service_control.sh get-pid my-cache-group my-spark-worker
 assert_exit "getting the pids for my-spark-worker"
-
+echo "verifying BDP functionality (smoke test)"
+./bin/smoke_test.sh

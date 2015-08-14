@@ -1,4 +1,9 @@
 #! /bin/bash
+if [[ $TARGET_VM_COUNT -le 0 ]]; then
+    >&2 echo "TARGET_VM_COUNT unset, edit and source env.sh"
+    exit 1
+fi
+
 function vagrant_name () {
     local NODE_NUMBER=$1
     VAGRANT_NAME="riak$NODE_NUMBER"
