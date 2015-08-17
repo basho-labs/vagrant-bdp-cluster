@@ -83,7 +83,7 @@ case $TARGET_VM in
     centos)
         BDP_PRIV="/usr/lib64/riak/lib/data_platform-1/priv"
         ;;
-    default)
+    *)
         BDP_PRIV="/usr/lib/riak/lib/data_platform-1/priv"
         ;;
 esac
