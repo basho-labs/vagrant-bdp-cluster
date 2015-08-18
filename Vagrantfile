@@ -246,7 +246,7 @@ if [[ $(which data-platform-admin) == "" ]]; then
     # leader election service is an EE feature
     sudo bash -c "echo 'listener.leader_latch.internal = #{ip_address}:5323' >> /etc/riak/riak.conf"
     sudo bash -c "echo 'listener.leader_latch.external = #{ip_address}:15323' >> /etc/riak/riak.conf"
-  end
+  fi
 
   echo "restarting Riak"
   sudo service riak stop
