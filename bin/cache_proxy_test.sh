@@ -1,5 +1,10 @@
 #! /bin/bash
 
+if [[ "$OSS" -eq 1 ]]; then
+    echo "cache proxy and redis are not included in BDP OSS"
+    exit 0
+fi
+
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$DIR/include_cluster.sh"
 source "$DIR/include_test.sh"

@@ -1,7 +1,9 @@
 #! /bin/bash
 if [[ "$@" =~ "-f" ]]; then
     echo "forcing new environment"
+    OSS=""
     TARGET_VM=""
+    TARGET_VM_VARIANT=""
     TARGET_VM_COUNT=""
     DOWNLOAD_BDP_PACKAGE_CENTOS_URL=""
     DOWNLOAD_BDP_EXTRAS_CENTOS_URL=""
@@ -9,12 +11,14 @@ if [[ "$@" =~ "-f" ]]; then
     DOWNLOAD_BDP_EXTRAS_UBUNTU_URL=""
 fi
 
+# whether BDP is Enterprise Edition (EE) or Open Source Software (OSS), default: 0 (not OSS, so EE)
+export OSS=${OSS:-0}
 # target vm box type, supports: centos or ubuntu, default: centos
 export TARGET_VM=${TARGET_VM:-"centos"}
 # target vm variant, supports: for centos 6.5 or 7, for ubuntu 12.04, default: ""
-export TARGET_VM_VARIANT=${TARGET_VM_VARIANT:-""}
+export TARGET_VM_VARIANT=${TARGET_VM_VARIANT:-"6"}
 # target vm count, supports: 1..as much as your hardware allows, default: 3
-export TARGET_VM_COUNT=${TARGET_VM_COUNT:-1}
+export TARGET_VM_COUNT=${TARGET_VM_COUNT:-3}
 # url for the bdp rpm package for centos
 export DOWNLOAD_BDP_PACKAGE_CENTOS_URL=""
 # url for the bdp extras tarball for centos
@@ -31,4 +35,11 @@ vagrant provisioning.
 EOF
 fi
 
-echo "Environment set TARGET_VM: $TARGET_VM, TARGET_VM_COUNT: $TARGET_VM_COUNT"
+cat <<EOF
+Environment
+===========
+OSS:               $OSS
+TARGET_VM:         $TARGET_VM
+TARGET_VM_VARIANT: $TARGET_VM_VARIANT
+TARGET_VM_COUNT:   $TARGET_VM_COUNT
+EOF

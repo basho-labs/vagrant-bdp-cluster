@@ -6,7 +6,12 @@ source "$DIR/include_cluster.sh"
 
 spark_master_port
 spark_worker_port
-vagrant_ips $TARGET_VM_COUNT $SPARK_MASTER_PORT ','
+if [[ "$OSS" -eq 1 ]]; then
+    # OSS supports a single spark master
+    vagrant_ips 1 $SPARK_MASTER_PORT ','
+else
+    vagrant_ips $TARGET_VM_COUNT $SPARK_MASTER_PORT ','
+fi
 SPARK_MASTER_URL="spark://$VAGRANT_IPS"
 
 vagrant_names $TARGET_VM_COUNT

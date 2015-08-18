@@ -10,10 +10,15 @@ function assert_exit () {
 function retry_bdp_service_start() {
     local SERVICE_GROUP=$1
     local SERVICE_CONFIG=$2
-    let EXPECTED_STATUS_LINES=$TARGET_VM_COUNT+1
+    local TARGET_VAGRANT_NAME=$3
+    if [[ "$TARGET_VAGRANT_NAME" == "" ]]; then
+        let EXPECTED_STATUS_LINES=$TARGET_VM_COUNT+1
+    else
+        let EXPECTED_STATUS_LINES=1+1
+    fi
     local RETRIES=3
     while [[ $RETRIES > 0 ]]; do
-        ./bin/bdp_service_control.sh start "$SERVICE_GROUP" "$SERVICE_CONFIG" >bdp_service_start.log 2>&1
+        ./bin/bdp_service_control.sh start "$SERVICE_GROUP" "$SERVICE_CONFIG" "$TARGET_VAGRANT_NAME" >bdp_service_start.log 2>&1
         assert_exit "starting $SERVICE_CONFIG"
         STATUS_LINES=$(./bin/bdp_service_status.sh |grep "$SERVICE_CONFIG" |wc -l)
         if [[ "$STATUS_LINES" -ge "$EXPECTED_STATUS_LINES" ]]; then
@@ -97,21 +102,39 @@ assert_exit "verify bdp cluster, likely insufficient up nodes"
 echo "setting up bucket properties for spark"
 ./bin/spark_riak_bucket_create.sh
 assert_exit "setting bucket properties for spark"
-echo "starting my-redis, my-cache-proxy, my-spark-master and my-spark-worker"
-retry_bdp_service_start "my-cache-group" "my-redis"
-retry_bdp_service_start "my-cache-group" "my-cache-proxy"
-retry_bdp_service_start "my-analysis-group" "my-spark-master"
+if [[ "$OSS" -eq 1 ]]; then
+    echo "starting my-spark-master my-spark-worker"
+else
+    echo "starting my-redis, my-cache-proxy, my-spark-master and my-spark-worker"
+fi
+if [[ "$OSS" -eq 1 ]]; then
+    : #<<NOP
+    retry_bdp_service_start "my-analysis-group" "my-spark-master" "riak1"
+else
+    retry_bdp_service_start "my-analysis-group" "my-spark-master"
+    retry_bdp_service_start "my-cache-group" "my-redis"
+    retry_bdp_service_start "my-cache-group" "my-cache-proxy"
+fi
 retry_bdp_service_start "my-analysis-group" "my-spark-worker"
 echo "verify bdp services were started"
 ./bin/bdp_service_status.sh
 assert_exit "verify bdp cluster, likely insufficient up nodes"
 echo "verify bdp services have local process identifiers (pids)"
-./bin/bdp_service_control.sh get-pid my-cache-group my-redis
-assert_exit "getting the pids for my-redis"
-./bin/bdp_service_control.sh get-pid my-cache-group my-cache-proxy
-assert_exit "getting the pids for my-cache-proxy"
-./bin/bdp_service_control.sh get-pid my-cache-group my-spark-master
-assert_exit "getting the pids for my-spark-master"
+if [[ "$OSS" -eq 1 ]]; then
+    : #<<NOP
+else
+    ./bin/bdp_service_control.sh get-pid my-cache-group my-redis
+    assert_exit "getting the pids for my-redis"
+    ./bin/bdp_service_control.sh get-pid my-cache-group my-cache-proxy
+    assert_exit "getting the pids for my-cache-proxy"
+fi
+if [[ "$OSS" -eq 1 ]]; then
+    ./bin/bdp_service_control.sh get-pid my-cache-group my-spark-master "riak1"
+    assert_exit "getting the pids for my-spark-master"
+else
+    ./bin/bdp_service_control.sh get-pid my-cache-group my-spark-master
+    assert_exit "getting the pids for my-spark-master"
+fi
 ./bin/bdp_service_control.sh get-pid my-cache-group my-spark-worker
 assert_exit "getting the pids for my-spark-worker"
 echo "verifying BDP functionality (smoke test)"

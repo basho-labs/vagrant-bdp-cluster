@@ -7,3 +7,4 @@ downloads/*
 logs/*
 !logs/.keep
 env.sh
+bin/oss-download.sh

@@ -28,6 +28,7 @@ EOF
 end
 
 def set_default_environment
+  ENV['OSS'] ||= '0'
   ENV['TARGET_VM'] ||= 'centos'
   ENV['TARGET_VM_VARIANT'] ||= '7'
   ENV['TARGET_VM_COUNT'] ||= '3'
@@ -39,6 +40,7 @@ def set_default_environment
 end
 set_default_environment
 
+$oss = ENV['OSS'].to_i
 $target_vm_count = ENV['TARGET_VM_COUNT'].to_i
 $target_vm = ENV['TARGET_VM']
 $target_vm_variant = ENV['TARGET_VM_VARIANT']
@@ -139,8 +141,11 @@ if [[ $(which data-platform-admin) == "" ]]; then
   sudo sed --in-place=bak 's/listener.protobuf.internal = .*/listener.protobuf.internal = 0.0.0.0:8087/' /etc/riak/riak.conf
   sudo bash -c "# Added by Vagrant provisioning' >> /etc/riak/riak.conf"
   sudo bash -c "echo 'handoff.ip = 0.0.0.0' >> /etc/riak/riak.conf"
-  sudo bash -c "echo 'listener.leader_latch.internal = #{ip_address}:5323' >> /etc/riak/riak.conf"
-  sudo bash -c "echo 'listener.leader_latch.external = #{ip_address}:15323' >> /etc/riak/riak.conf"
+  if [[ "#{$oss}" -eq 0 ]]; then
+    # leader election service is an EE feature
+    sudo bash -c "echo 'listener.leader_latch.internal = #{ip_address}:5323' >> /etc/riak/riak.conf"
+    sudo bash -c "echo 'listener.leader_latch.external = #{ip_address}:15323' >> /etc/riak/riak.conf"
+  fi
 
   echo "restarting Riak"
   sudo service riak stop
@@ -237,8 +242,11 @@ if [[ $(which data-platform-admin) == "" ]]; then
   sudo sed --in-place=bak 's/listener.protobuf.internal = .*/listener.protobuf.internal = 0.0.0.0:8087/' /etc/riak/riak.conf
   sudo bash -c "# Added by Vagrant provisioning' >> /etc/riak/riak.conf"
   sudo bash -c "echo 'handoff.ip = 0.0.0.0' >> /etc/riak/riak.conf"
-  sudo bash -c "echo 'listener.leader_latch.internal = #{ip_address}:5323' >> /etc/riak/riak.conf"
-  sudo bash -c "echo 'listener.leader_latch.external = #{ip_address}:15323' >> /etc/riak/riak.conf"
+  if [[ "#{$oss}" -eq 0 ]]; then
+    # leader election service is an EE feature
+    sudo bash -c "echo 'listener.leader_latch.internal = #{ip_address}:5323' >> /etc/riak/riak.conf"
+    sudo bash -c "echo 'listener.leader_latch.external = #{ip_address}:15323' >> /etc/riak/riak.conf"
+  end
 
   echo "restarting Riak"
   sudo service riak stop
