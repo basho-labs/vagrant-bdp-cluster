@@ -177,13 +177,17 @@ the specific service as follows (using spark-worker as an example):
 ```
 
 ## Test BDP Services
-Test each BDP service by following its quick start guide and/or examples.
-Refer to bin/riak_test.sh for how to encapsulate test commands to be executed
-across all nodes.
+
+```bash
+./bin/smoke_test.sh
+```
+
+The smoke test tests each service with a minimal test that assures expected
+functionality.
 
 ## Keep up to date
 This Vagrant solution was developed and tested against the BDP beta release cut
-on 2015-07-15.
+on 2015-08-19.
 
 As BDP is being developed, you may need to update your local Vagrant setup via
 git pull.  If the Vagrant setup is out-of-date, it is highly suggested to
@@ -192,7 +196,7 @@ apply the quickstart script.
 
 ## Support and Contributions
 **This tool is provided without support.** Definitely do not ever use this in
-production, it's strictlya development tool.
+production, it's strictly a development tool.
 
 If you'd like to contribute, fork and make a pull request.
 

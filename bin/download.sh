@@ -62,12 +62,36 @@ if [[ "$DOWNLOAD_BDP_EXTRAS_UBUNTU_FILE" == "" ]]; then
     url_extension "$DOWNLOAD_BDP_EXTRAS_UBUNTU_URL"
     DOWNLOAD_BDP_EXTRAS_UBUNTU_FILE="basho-data-platform-extras-UBUNTU.$URL_EXTENSION"
 fi
+DOWNLOAD_BDP_PACKAGE_DEBIAN_URL=${DOWNLOAD_BDP_PACKAGE_DEBIAN_URL:-""}
+if [[ "$DOWNLOAD_BDP_PACKAGE_DEBIAN_FILE" == "" ]]; then
+    url_extension "$DOWNLOAD_BDP_PACKAGE_DEBIAN_URL"
+    DOWNLOAD_BDP_PACKAGE_DEBIAN_FILE="basho-data-platform-DEBIAN.$URL_EXTENSION"
+fi
+DOWNLOAD_BDP_EXTRAS_DEBIAN_URL=${DOWNLOAD_BDP_EXTRAS_DEBIAN_URL:-""}
+if [[ "$DOWNLOAD_BDP_EXTRAS_DEBIAN_FILE" == "" ]]; then
+    url_extension "$DOWNLOAD_BDP_EXTRAS_DEBIAN_URL"
+    DOWNLOAD_BDP_EXTRAS_DEBIAN_FILE="basho-data-platform-extras-DEBIAN.$URL_EXTENSION"
+fi
+DOWNLOAD_BDP_PACKAGE_OSX_URL=${DOWNLOAD_BDP_PACKAGE_OSX_URL:-""}
+if [[ "$DOWNLOAD_BDP_PACKAGE_OSX_FILE" == "" ]]; then
+    url_extension "$DOWNLOAD_BDP_PACKAGE_OSX_URL"
+    DOWNLOAD_BDP_PACKAGE_OSX_FILE="basho-data-platform-OSX.$URL_EXTENSION"
+fi
+DOWNLOAD_BDP_EXTRAS_OSX_URL=${DOWNLOAD_BDP_EXTRAS_OSX_URL:-""}
+if [[ "$DOWNLOAD_BDP_EXTRAS_OSX_FILE" == "" ]]; then
+    url_extension "$DOWNLOAD_BDP_EXTRAS_OSX_URL"
+    DOWNLOAD_BDP_EXTRAS_OSX_FILE="basho-data-platform-extras-OSX.$URL_EXTENSION"
+fi
 
 DOWNLOAD_JAVA_FILE="$DIR/../downloads/$DOWNLOAD_JAVA_FILE"
 DOWNLOAD_BDP_PACKAGE_CENTOS_FILE="$DIR/../downloads/$DOWNLOAD_BDP_PACKAGE_CENTOS_FILE"
 DOWNLOAD_BDP_EXTRAS_CENTOS_FILE="$DIR/../downloads/$DOWNLOAD_BDP_EXTRAS_CENTOS_FILE"
 DOWNLOAD_BDP_PACKAGE_UBUNTU_FILE="$DIR/../downloads/$DOWNLOAD_BDP_PACKAGE_UBUNTU_FILE"
 DOWNLOAD_BDP_EXTRAS_UBUNTU_FILE="$DIR/../downloads/$DOWNLOAD_BDP_EXTRAS_UBUNTU_FILE"
+DOWNLOAD_BDP_PACKAGE_DEBIAN_FILE="$DIR/../downloads/$DOWNLOAD_BDP_PACKAGE_DEBIAN_FILE"
+DOWNLOAD_BDP_EXTRAS_DEBIAN_FILE="$DIR/../downloads/$DOWNLOAD_BDP_EXTRAS_DEBIAN_FILE"
+DOWNLOAD_BDP_PACKAGE_OSX_FILE="$DIR/../downloads/$DOWNLOAD_BDP_PACKAGE_OSX_FILE"
+DOWNLOAD_BDP_EXTRAS_OSX_FILE="$DIR/../downloads/$DOWNLOAD_BDP_EXTRAS_OSX_FILE"
 
 # centos
 if [[ ! -e "$DOWNLOAD_JAVA_FILE" && "$DOWNLOAD_JAVA_URL" != "" ]]; then
@@ -93,7 +117,7 @@ fi
 
 # expand tarball, if needed
 url_extension "$DOWNLOAD_BDP_EXTRAS_CENTOS_FILE"
-if [[ "$URL_EXTENSION" == "tar.gz" ]]; then
+if [[ "$URL_EXTENSION" == "tar.gz" && ! -d "$DIR/../downloads/basho-data-platform-CENTOS" ]]; then
     mkdir "$DIR/../downloads/basho-data-platform-extras-CENTOS/"
     tar -C "$DIR/../downloads/basho-data-platform-extras-CENTOS/" --strip-components=1 -xzf "$DOWNLOAD_BDP_EXTRAS_CENTOS_FILE"
 fi
@@ -113,8 +137,48 @@ fi
 
 # expand tarball, if needed
 url_extension "$DOWNLOAD_BDP_EXTRAS_UBUNTU_FILE"
-if [[ "$URL_EXTENSION" == "tar.gz" ]]; then
+if [[ "$URL_EXTENSION" == "tar.gz" && ! -d "$DIR/../downloads/basho-data-platform-UBUNTU" ]]; then
     mkdir "$DIR/../downloads/basho-data-platform-extras-UBUNTU/"
     tar -C "$DIR/../downloads/basho-data-platform-extras-UBUNTU/" --strip-components=1 -xzf "$DOWNLOAD_BDP_EXTRAS_UBUNTU_FILE"
+fi
+
+# debian
+if [[ ! -e "$DOWNLOAD_BDP_PACKAGE_DEBIAN_FILE" && "$DOWNLOAD_BDP_PACKAGE_DEBIAN_URL" != "" ]]; then
+    wget -O "$DOWNLOAD_BDP_PACKAGE_DEBIAN_FILE" "$DOWNLOAD_BDP_PACKAGE_DEBIAN_URL"
+    if [[ $? != 0 ]]; then
+        echo "failed to download bdp package for debian"
+    fi
+    wget -O "$DOWNLOAD_BDP_EXTRAS_DEBIAN_FILE" "$DOWNLOAD_BDP_EXTRAS_DEBIAN_URL"
+    if [[ $? != 0 ]]; then
+        echo "failed to download bdp tarball for debian"
+        exit
+    fi
+fi
+
+# expand tarball, if needed
+url_extension "$DOWNLOAD_BDP_EXTRAS_DEBIAN_FILE"
+if [[ "$URL_EXTENSION" == "tar.gz" && ! -d "$DIR/../downloads/basho-data-platform-DEBIAN" ]]; then
+    mkdir "$DIR/../downloads/basho-data-platform-extras-DEBIAN/"
+    tar -C "$DIR/../downloads/basho-data-platform-extras-DEBIAN/" --strip-components=1 -xzf "$DOWNLOAD_BDP_EXTRAS_DEBIAN_FILE"
+fi
+
+# osx
+if [[ ! -e "$DOWNLOAD_BDP_PACKAGE_OSX_FILE" && "$DOWNLOAD_BDP_PACKAGE_OSX_URL" != "" ]]; then
+    wget -O "$DOWNLOAD_BDP_PACKAGE_OSX_FILE" "$DOWNLOAD_BDP_PACKAGE_OSX_URL"
+    if [[ $? != 0 ]]; then
+        echo "failed to download bdp package for osx"
+    fi
+    wget -O "$DOWNLOAD_BDP_EXTRAS_OSX_FILE" "$DOWNLOAD_BDP_EXTRAS_OSX_URL"
+    if [[ $? != 0 ]]; then
+        echo "failed to download bdp tarball for osx"
+        exit
+    fi
+fi
+
+# expand CORE tarball, if needed
+url_extension "$DOWNLOAD_BDP_PACKAGE_OSX_FILE"
+if [[ "$URL_EXTENSION" == "tar.gz" && ! -d "$DIR/../downloads/basho-data-platform-OSX" ]]; then
+    mkdir "$DIR/../downloads/basho-data-platform-OSX/"
+    tar -C "$DIR/../downloads/basho-data-platform-OSX/" --strip-components=1 -xzf "$DOWNLOAD_BDP_PACKAGE_OSX_FILE"
 fi
 

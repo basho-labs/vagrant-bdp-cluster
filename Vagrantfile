@@ -8,11 +8,15 @@ def usage
 usage: TARGET_VM=centos TARGET_VM_COUNT=3 vagrant up
 
 Environment Variables:
-TARGET_VM - determines the OS, defaults to 'centos', supports the following:
+TARGET_VM - determines the OS, defaults to 'centos'
+TARGET_VM_VARIANT - determines the OS variant, supports the following (quoted):
   centos - CentOS 6.5 "6"
            CentOS 7.0 "7"
   ubuntu - Ubuntu 12.04 "precise"
            Ubuntu 14.04 "trusty"
+  debian - Debian 7.8 "wheezy"
+           Debian 8.0 "jessie"
+  osx    - OSX 10.10 "yosemite"
 
 TARGET_VM_COUNT - determines the number of VM's defaults to 3.
 
@@ -37,6 +41,10 @@ def set_default_environment
   ENV['DOWNLOAD_BDP_EXTRAS_CENTOS_FILE'] ||= "basho-data-platform-extras-CENTOS.rpm"
   ENV['DOWNLOAD_BDP_PACKAGE_UBUNTU_FILE'] ||= "basho-data-platform-UBUNTU.deb"
   ENV['DOWNLOAD_BDP_EXTRAS_UBUNTU_FILE'] ||= "basho-data-platform-extras-UBUNTU.deb"
+  ENV['DOWNLOAD_BDP_PACKAGE_DEBIAN_FILE'] ||= "basho-data-platform-DEBIAN.deb"
+  ENV['DOWNLOAD_BDP_EXTRAS_DEBIAN_FILE'] ||= "basho-data-platform-extras-DEBIAN.deb"
+  ENV['DOWNLOAD_BDP_PACKAGE_OSX_FILE'] ||= "basho-data-platform-OSX.tar.gz"
+  ENV['DOWNLOAD_BDP_EXTRAS_OSX_FILE'] ||= "basho-data-platform-extras-OSX.pkg"
 end
 set_default_environment
 
@@ -56,6 +64,16 @@ elsif $target_vm == 'ubuntu'
   else
     $vm_box = 'chef/ubuntu-12.04'
   end
+elsif $target_vm == 'debian'
+  if $target_vm_variant == 'jessie'
+    $vm_box = 'chef/debian-8.0'
+    $target_vm_variant_equivalent = 'trusty'
+  else
+    $vm_box = 'chef/debian-7.8'
+    $target_vm_variant_equivalent = 'precise'
+  end
+elsif $target_vm == 'osx'
+  $vm_box = 'osx-yosemite' #<< added via provision.sh, if needed
 else
   raise usage
   exit 1
@@ -66,6 +84,10 @@ def provisioning_script(opts = {})
     provisioning_script_centos(opts)
   elsif $target_vm == 'ubuntu'
     provisioning_script_ubuntu(opts)
+  elsif $target_vm == 'debian'
+    provisioning_script_debian(opts)
+  elsif $target_vm == 'osx'
+    provisioning_script_osx(opts)
   else
     raise usage
   end
@@ -155,7 +177,6 @@ if [[ $(which data-platform-admin) == "" ]]; then
   echo "BDP installed, BDP home: $BDP_HOME"
 fi
 EOF
-  # NOTE: joining the cluster must be done after provisioning all boxes, so use bin/create_riak_cluster.sh
 end
 
 def provisioning_script_ubuntu(opts = {})
@@ -256,11 +277,267 @@ if [[ $(which data-platform-admin) == "" ]]; then
   echo "BDP installed, BDP home: $BDP_HOME"
 fi
 EOF
-  # NOTE: joining the cluster must be done after provisioning all boxes, so use bin/create_riak_cluster.sh
+end
+
+def provisioning_script_debian(opts = {})
+  node_number = opts[:node_number] || 1
+  ip_address = opts[:ip_address] || '127.0.0.1'
+  bdp_path = '/usr/lib/riak/lib/data_platform-1'
+  download_bdp_package_file = ENV['DOWNLOAD_BDP_PACKAGE_DEBIAN_FILE']
+  download_bdp_extras_file = ENV['DOWNLOAD_BDP_EXTRAS_DEBIAN_FILE']
+
+<<EOF
+DIR=$PWD
+# verify packages are downloaded
+if [[ ! -e "$DIR/downloads/#{download_bdp_package_file}" ]]; then
+  echo "This vagrant setup requires configuration of download urls, see README.md for further details."
+  exit 1
+fi
+
+# increase open file limit
+if [[ $(sysctl fs.file-max |grep 65536) == "" ]]; then
+  sudo bash -c "cat <<EOF_LIMITS >> /etc/security/limits.conf
+*                soft    nofile          65536
+*                hard    nofile          65536
+EOF_LIMITS
+"
+fi
+
+# install jdk 8
+if [[ $(which javac) == "" ]]; then
+  echo "installing jdk 8"
+  # debconf-utils is to accept the java license
+  RETRIES=3
+  while [[ $RETRIES > 0 ]]; do
+    sudo apt-get install -y debconf-utils
+    if [[ "$?" == "0" ]]; then
+      RETRIES=0
+    else
+      let RETRIES-=1
+      echo "retrying install of debconf-utils"
+      sudo apt-get update
+    fi
+  done
+
+  if [[ -e "/etc/apt/sources.list.d/webupd8team-java-#{$target_vm_variant}.list" ]]; then
+    sudo rm /etc/apt/sources.list.d/webupd8team-java-#{$target_vm_variant}.list
+  fi
+  sudo bash -c 'echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu #{$target_vm_variant_equivalent} main" | tee /etc/apt/sources.list.d/webupd8team-java.list'
+  sudo bash -c 'echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu #{$target_vm_variant_equivalent} main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list'
+  sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
+  sudo apt-get update
+
+  # accept java license
+  sudo echo -e oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
+  sudo apt-get install -y oracle-java8-installer >/dev/null 2>&1
+  JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+  if [[ "$JAVA_HOME" == "" ]]; then
+    echo "failed to install jdk 8"
+    exit 1
+  fi
+  grep JAVA_HOME /etc/environment >/dev/null 2>&1 || test $? -ne 0 && sudo bash -c "echo JAVA_HOME=$JAVA_HOME >>/etc/environment"
+  echo "jdk 8 installed, JAVA_HOME: $JAVA_HOME"
+fi
+
+# install bdp
+if [[ $(which data-platform-admin) == "" ]]; then
+  echo "installing bdp"
+  cd $DIR/downloads
+  sudo dpkg -i "#{download_bdp_package_file}"
+  if [[ -d basho-data-platform-extras-DEBIAN ]]; then
+    cd basho-data-platform-extras-DEBIAN
+    sudo ./install.sh
+  else
+    sudo dpkg -i "#{download_bdp_extras_file}"
+    if [[ "$?" != "0" ]]; then
+        echo "the bdp extras package failed to install"
+        exit 1
+    fi
+  fi
+  cd $DIR
+
+  # configure spark master
+  echo "configuring spark-master"
+  sudo bash -c "echo 'SPARK_MASTER_IP=#{ip_address} >> #{bdp_path}/priv/spark-master/conf/spark-env.sh'"
+
+  # configure riak
+  echo "configuring riak"
+  sudo sed --in-place=bak 's/distributed_cookie = .*/distributed_cookie = riak_bdp/' /etc/riak/riak.conf
+  sudo sed --in-place=bak 's/nodename = .*/nodename = riak_bdp_#{node_number}@#{ip_address}/' /etc/riak/riak.conf
+  sudo sed --in-place=bak 's/listener.http.internal = .*/listener.http.internal = 0.0.0.0:8098/' /etc/riak/riak.conf
+  sudo sed --in-place=bak 's/listener.protobuf.internal = .*/listener.protobuf.internal = 0.0.0.0:8087/' /etc/riak/riak.conf
+  sudo bash -c "# Added by Vagrant provisioning' >> /etc/riak/riak.conf"
+  sudo bash -c "echo 'handoff.ip = 0.0.0.0' >> /etc/riak/riak.conf"
+  if [[ "#{$oss}" -eq 0 ]]; then
+    # leader election service is an EE feature
+    sudo bash -c "echo 'listener.leader_latch.internal = #{ip_address}:5323' >> /etc/riak/riak.conf"
+    sudo bash -c "echo 'listener.leader_latch.external = #{ip_address}:15323' >> /etc/riak/riak.conf"
+  fi
+
+  echo "restarting Riak"
+  sudo service riak stop
+  sudo service riak start
+
+  BDP_HOME=$(dirname $(which data-platform-admin))
+  echo "BDP installed, BDP home: $BDP_HOME"
+fi
+EOF
+end
+
+def provisioning_script_osx(opts = {})
+  node_number = opts[:node_number] || 1
+  ip_address = opts[:ip_address] || '127.0.0.1'
+  bdp_path = '/usr/lib/riak/lib/data_platform-1'
+  download_bdp_package_file = ENV['DOWNLOAD_BDP_PACKAGE_OSX_FILE']
+  download_bdp_extras_file = ENV['DOWNLOAD_BDP_EXTRAS_OSX_FILE']
+
+<<EOF
+DIR=$PWD
+# verify packages are downloaded
+if [[ ! -e "$DIR/downloads/#{download_bdp_package_file}" ]]; then
+  echo "This vagrant setup requires configuration of download urls, see README.md for further details."
+  exit 1
+fi
+
+# increase open file limit
+sudo bash -c "cat <<EOF_LIMITS > /Library/LaunchDaemons/limit.maxfiles.plist 
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+  <plist version="1.0">
+    <dict>
+      <key>Label</key>
+        <string>limit.maxfiles</string>
+      <key>ProgramArguments</key>
+        <array>
+          <string>launchctl</string>
+          <string>limit</string>
+          <string>maxfiles</string>
+          <string>65536</string>
+          <string>65536</string>
+        </array>
+      <key>RunAtLoad</key>
+        <true/>
+      <key>ServiceIPC</key>
+        <false/>
+    </dict>
+  </plist>
+EOF_LIMITS
+"
+sudo bash -c "cat <<EOF_LIMITS > /Library/LaunchDaemons/limit.maxproc.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple/DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+  <plist version="1.0">
+    <dict>
+      <key>Label</key>
+        <string>limit.maxproc</string>
+      <key>ProgramArguments</key>
+        <array>
+          <string>launchctl</string>
+          <string>limit</string>
+          <string>maxproc</string>
+          <string>2048</string>
+          <string>2048</string>
+        </array>
+      <key>RunAtLoad</key>
+        <true />
+      <key>ServiceIPC</key>
+        <false />
+    </dict>
+  </plist>
+EOF_LIMITS
+"
+# reload property lists (much faster than a reboot)
+for plist in limit.maxfiles limit.maxproc; do
+  sudo launchctl unload /Library/LaunchDaemons/$plist.plist
+  sudo launchctl load /Library/LaunchDaemons/$plist.plist
+done 
+
+# install java
+brew update
+if brew cask list java |grep 1.8; then
+  echo "brew version of java is expected to be 1.8"
+  exit 1
+else
+  brew cask install java
+fi
+JAVA_HOME=$(dirname $(dirname $(readlink $(which javac))))
+if [[ "$JAVA_HOME" == "" ]]; then
+  echo "failed to install jdk 8"
+  exit 1
+fi
+grep JAVA_HOME /etc/profile >/dev/null 2>&1 || test $? -ne 0 && sudo bash -c "echo JAVA_HOME=$JAVA_HOME >>/etc/profile"
+echo "jdk 8 installed, JAVA_HOME: $JAVA_HOME"
+
+# install bdp
+if [[ $(which data-platform-admin) == "" ]]; then
+  echo "installing bdp"
+  cd $DIR/Downloads
+  sudo installer -pkg "#{download_bdp_extras_file}" -target /
+  if [[ -d basho-data-platform-OSX ]]; then
+    cd basho-data-platform-OSX
+    sudo cp -r . "#{bdp_path}"
+  else
+    sudo installer -pkg "#{download_bdp_package_file}" -target /
+    if [[ "$?" != "0" ]]; then
+        echo "the bdp core package failed to install"
+        exit 1
+    fi
+  fi
+  cd $DIR
+  sudo bash -c "echo 'export PATH=$PATH:#{bdp_path}/bin' >>/etc/profile"
+  . /etc/profile
+
+  # configure spark master
+  echo "configuring spark-master"
+  sudo bash -c "echo 'SPARK_MASTER_IP=#{ip_address} >> #{bdp_path}/priv/spark-master/conf/spark-env.sh'"
+ 
+  # configure riak
+  echo "configuring riak"
+  sudo sed --in-place=bak 's/distributed_cookie = .*/distributed_cookie = riak_bdp/' /etc/riak/riak.conf
+  sudo sed --in-place=bak 's/nodename = .*/nodename = riak_bdp_#{node_number}@#{ip_address}/' /etc/riak/riak.conf
+  sudo sed --in-place=bak 's/listener.http.internal = .*/listener.http.internal = 0.0.0.0:8098/' /etc/riak/riak.conf
+  sudo sed --in-place=bak 's/listener.protobuf.internal = .*/listener.protobuf.internal = 0.0.0.0:8087/' /etc/riak/riak.conf
+  sudo bash -c "# Added by Vagrant provisioning' >> /etc/riak/riak.conf"
+  sudo bash -c "echo 'handoff.ip = 0.0.0.0' >> /etc/riak/riak.conf"
+  if [[ "#{$oss}" -eq 0 ]]; then
+    # leader election service is an EE feature
+    sudo bash -c "echo 'listener.leader_latch.internal = #{ip_address}:5323' >> /etc/riak/riak.conf"
+    sudo bash -c "echo 'listener.leader_latch.external = #{ip_address}:15323' >> /etc/riak/riak.conf"
+  fi
+
+# TODO: determine why riak installed via these osx packages is crashing
+# TODO: for riak to be run as a service, need a launchctl, such as the following:
+#<?xml version="1.0" encoding="UTF-8"?>
+#<!DOCTYPE plist PUBLIC -//Apple Computer//DTD PLIST 1.0//EN
+#          http://www.apple.com/DTDs/PropertyList-1.0.dtd >
+#<plist version="1.0">
+#    <dict>
+#    <key>Label</key>
+#         <string>com.basho.riak</string>
+#         <key>Program</key>
+#         <string>riak</string>
+#         <key>ProgramArguments</key>
+#         <array>
+#         <string>start</string>
+#         </array>
+#         <key>KeepAlive</key>
+#         <false/>
+#      </dict>
+#</plist>
+
+  echo "restarting Riak"
+#  sudo service riak start
+  sudo riak start
+
+  BDP_HOME=$(dirname $(which data-platform-admin))
+  echo "BDP installed, BDP home: $BDP_HOME"
+fi
+
+EOF
 end
 
 # ensure download has been run, it's re-entrant
 system('./bin/download.sh')
+
 Vagrant.configure(2) do |config|
   (1..$target_vm_count).each do |node_number|
     opts = {
@@ -269,16 +546,41 @@ Vagrant.configure(2) do |config|
      ip_address: "192.168.50.#{node_number + 1}"
     }
     primary = (opts[:node_number] == 1)
+
     config.vm.define opts[:node_name], primary: primary do |n|
       n.vm.box = $vm_box
 
-      n.vm.synced_folder "downloads/", "/home/vagrant/downloads"
+      if $target_vm == 'osx'
+        # Temporary fix for annoying "Replace key" issue
+        n.ssh.insert_key = false
+
+        # Use NFS for the shared folder
+        n.vm.synced_folder "downloads/", "/users/vagrant/Downloads",
+          id: "core",
+          nfs: true,
+          mount_options: ['nolock,vers=3,udp,noatime']
+      else
+        n.vm.synced_folder "downloads/", "/home/vagrant/downloads"
+      end
 
       n.vm.network "private_network", ip: opts[:ip_address]
 
       # limit memory consumption
       n.vm.provider "virtualbox" do |vb|
         vb.memory = "2048"
+      end
+
+      if $target_vm == 'osx'
+        n.vm.provider "virtualbox" do |vb|
+          # Fix "hfs mounted macintosh hd on device root_device" issue
+          vb.customize ["modifyvm", :id, "--cpuidset", "1","000206a7","02100800","1fbae3bf","bfebfbff"]
+          # Some more hacks for device recognition
+          vb.customize ["setextradata", :id, "VBoxInternal/Devices/efi/0/Config/DmiSystemProduct", "MacBookPro11,3"]
+          vb.customize ["setextradata", :id, "VBoxInternal/Devices/efi/0/Config/DmiSystemVersion", "1.0"]
+          vb.customize ["setextradata", :id, "VBoxInternal/Devices/efi/0/Config/DmiBoardProduct", "Iloveapple"]
+          vb.customize ["setextradata", :id, "VBoxInternal/Devices/smc/0/Config/DeviceKey", "ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc"]
+          vb.customize ["setextradata", :id, "VBoxInternal/Devices/smc/0/Config/GetKeyFromRealSMC", "1"]
+        end
       end
 
       # port forwards
