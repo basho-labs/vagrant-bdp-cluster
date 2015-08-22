@@ -120,8 +120,8 @@ if [[ $(sysctl fs.file-max |grep 65536) == "" ]]; then
 *                hard    nofile          65536
 EOF_LIMITS
 "
-
 fi
+
 # install jdk 8
 if [[ $(which javac) == "" ]]; then
   echo "installing jdk 8"
@@ -134,6 +134,7 @@ if [[ $(which javac) == "" ]]; then
   grep JAVA_HOME /etc/environment >/dev/null 2>&1 || test $? -ne 0 && sudo bash -c "echo JAVA_HOME=$JAVA_HOME >>/etc/environment"
   echo "jdk 8 installed, JAVA_HOME: $JAVA_HOME"
 fi
+
 # install bdp
 if [[ $(which data-platform-admin) == "" ]]; then
   echo "installing bdp"
@@ -400,6 +401,24 @@ if [[ ! -e "$DIR/downloads/#{download_bdp_package_file}" ]]; then
 fi
 
 # increase open file limit
+for v in kern.maxfilesperproc kern.maxfiles; do
+  sudo sed -i bak "s/$v[ ]*=.*//" /etc/sysctl.conf
+done
+sudo bash -c "grep -v '^$' /etc/sysctl.conf |tee /etc/sysctl.conf"
+sudo bash -c "cat <<EOF_LIMITS >> /etc/sysctl.conf
+kern.maxfilesperproc=65536
+kern.maxfiles=65536
+EOF_LIMITS
+"
+sysctl -w kern.maxfilesperproc=65536
+sysctl -w kern.maxfiles=65536
+for i in 65536 10240; do
+  if ulimit -n $i >/dev/null 2>&1; then
+    echo "ulimit -n set to $(ulimit -n)"
+    break
+  fi
+done
+
 sudo bash -c "cat <<EOF_LIMITS > /Library/LaunchDaemons/limit.maxfiles.plist 
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
   <plist version="1.0">
@@ -451,6 +470,12 @@ for plist in limit.maxfiles limit.maxproc; do
   sudo launchctl load /Library/LaunchDaemons/$plist.plist
 done 
 
+sudo bash -c "cat <<EOF_LIMITS >> /etc/profile
+ulimit -n 65536
+EOF_LIMITS
+"
+. /etc/profile
+
 # install java
 brew update
 if brew cask list java |grep 1.8; then
@@ -483,8 +508,22 @@ if [[ $(which data-platform-admin) == "" ]]; then
     fi
   fi
   cd $DIR
-  sudo bash -c "echo 'export PATH=$PATH:#{bdp_path}/bin' >>/etc/profile"
+  # NOTE: subtle addition of . to PATH to ensure run.sh can be run w/o sourcing
+  sudo bash -c "echo 'export PATH=$PATH:#{bdp_path}/bin:.' >>/etc/profile"
   . /etc/profile
+
+  # create riak group and user
+  sudo dscl . create /groups/riak
+  sudo dscl . append /groups/riak gid $(sudo dscl . list /groups gid |awk 'BEGIN {max = 0};{if ($2 > max) max = $2} END {print max + 1}')
+  sudo dscl . -append /groups/riak passwd "*"
+
+  sudo dscl . create /users/riak
+  sudo dscl . -append /users/riak uid $(sudo dscl . -list /users uid |awk 'BEGIN {max = 0};{if ($2 > max) max = $2} END {print max + 1}')
+sudo dscl . -append /users/riak gid $(sudo dscl . -read /groups/riak gid |awk '{print $2}')
+  sudo dscl . -append /users/riak passwd "*"
+
+  # set ownership of BDP directories to the riak user
+  sudo chown -R riak:riak #{bdp_path}
 
   # configure spark master
   echo "configuring spark-master"
@@ -492,41 +531,74 @@ if [[ $(which data-platform-admin) == "" ]]; then
  
   # configure riak
   echo "configuring riak"
-  sudo sed --in-place=bak 's/distributed_cookie = .*/distributed_cookie = riak_bdp/' /etc/riak/riak.conf
-  sudo sed --in-place=bak 's/nodename = .*/nodename = riak_bdp_#{node_number}@#{ip_address}/' /etc/riak/riak.conf
-  sudo sed --in-place=bak 's/listener.http.internal = .*/listener.http.internal = 0.0.0.0:8098/' /etc/riak/riak.conf
-  sudo sed --in-place=bak 's/listener.protobuf.internal = .*/listener.protobuf.internal = 0.0.0.0:8087/' /etc/riak/riak.conf
-  sudo bash -c "# Added by Vagrant provisioning' >> /etc/riak/riak.conf"
-  sudo bash -c "echo 'handoff.ip = 0.0.0.0' >> /etc/riak/riak.conf"
+  sudo sed -i bak 's/distributed_cookie = .*/distributed_cookie = riak_bdp/' #{bdp_path}/etc/riak.conf
+  sudo sed -i bak 's/nodename = .*/nodename = riak_bdp_#{node_number}@#{ip_address}/' #{bdp_path}/etc/riak.conf
+  sudo sed -i bak 's/listener.http.internal = .*/listener.http.internal = 0.0.0.0:8098/' #{bdp_path}/etc/riak.conf
+  sudo sed -i bak 's/listener.protobuf.internal = .*/listener.protobuf.internal = 0.0.0.0:8087/' #{bdp_path}/etc/riak.conf
+  sudo bash -c "# Added by Vagrant provisioning' >> #{bdp_path}/etc/riak.conf"
+  sudo bash -c "echo 'handoff.ip = 0.0.0.0' >> #{bdp_path}/etc/riak.conf"
   if [[ "#{$oss}" -eq 0 ]]; then
     # leader election service is an EE feature
-    sudo bash -c "echo 'listener.leader_latch.internal = #{ip_address}:5323' >> /etc/riak/riak.conf"
-    sudo bash -c "echo 'listener.leader_latch.external = #{ip_address}:15323' >> /etc/riak/riak.conf"
+    sudo bash -c "echo 'listener.leader_latch.internal = #{ip_address}:5323' >> #{bdp_path}/etc/riak.conf"
+    sudo bash -c "echo 'listener.leader_latch.external = #{ip_address}:15323' >> #{bdp_path}/etc/riak.conf"
   fi
 
-# TODO: determine why riak installed via these osx packages is crashing
-# TODO: for riak to be run as a service, need a launchctl, such as the following:
-#<?xml version="1.0" encoding="UTF-8"?>
-#<!DOCTYPE plist PUBLIC -//Apple Computer//DTD PLIST 1.0//EN
-#          http://www.apple.com/DTDs/PropertyList-1.0.dtd >
-#<plist version="1.0">
-#    <dict>
-#    <key>Label</key>
-#         <string>com.basho.riak</string>
-#         <key>Program</key>
-#         <string>riak</string>
-#         <key>ProgramArguments</key>
-#         <array>
-#         <string>start</string>
-#         </array>
-#         <key>KeepAlive</key>
-#         <false/>
-#      </dict>
-#</plist>
+sudo bash -c "cat <<EOF_LAUNCH > /Library/LaunchDaemons/com.basho.riak.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC -//Apple Computer//DTD PLIST 1.0//EN
+          http://www.apple.com/DTDs/PropertyList-1.0.dtd >
+<plist version="1.0">
+    <dict>
+         <key>Label</key>
+         <string>com.basho.riak</string>
+         <key>UserName</key>
+         <string>riak</string>
+         <key>SoftResourceLimits</key>
+         <dict>
+             <key>NumberOfFiles</key>
+             <integer>65536</integer>
+             <key>NumberOfProcesses</key>
+             <integer>2048</integer>
+         </dict>
+         <key>HardResourceLimits</key>
+         <dict>
+             <key>NumberOfFiles</key>
+             <integer>65536</integer>
+             <key>NumberOfProcesses</key>
+             <integer>2048</integer>
+         </dict>
+         <key>RunAtLoad</key>
+         <true/>
+         <key>KeepAlive</key>
+         <false/>
+         <key>WorkingDirectory</key>
+         <string>#{bdp_path}</string>
+         <key>ProgramArguments</key>
+         <array>
+             <string>#{bdp_path}/bin/riak</string>
+             <string>start</string>
+         </array>
+         <key>StandardErrorPath</key>
+         <string>#{bdp_path}/log/launch.error.log</string>
+         <key>StandardOutPath</key>
+         <string>#{bdp_path}/log/launch.out.log</string>
+      </dict>
+</plist>
+EOF_LAUNCH
+"
+
+  # HACK: code:priv_dir(data_platform) is resolving to the wrong path for OSX
+  # IS: "/usr/lib/riak/lib/data_platform-1/lib/data_platform-1/priv"
+  # SHOULD BE:
+  # "/usr/lib/riak/lib/data_platform-1/priv"
+  # using an otherwise harmlessi set of symlinks to assure correct paths
+  for i in `ls -d /usr/lib/riak/lib/data_platform-1/priv/*`; do
+    sudo ln -s $i /usr/lib/riak/lib/data_platform-1/lib/data_platform-1/priv
+  done
 
   echo "restarting Riak"
-#  sudo service riak start
-  sudo riak start
+  sudo launchctl load /Library/LaunchDaemons/com.basho.riak.plist
+  sudo launchctl start com.basho.riak
 
   BDP_HOME=$(dirname $(which data-platform-admin))
   echo "BDP installed, BDP home: $BDP_HOME"

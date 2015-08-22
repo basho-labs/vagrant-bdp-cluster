@@ -32,6 +32,17 @@ function retry_bdp_service_start() {
 echo "create the riak cluster"
 ./bin/riak_cluster_create.sh
 assert_exit "create riak cluster"
+RETRIES=120
+while [[ $RETRIES > 0 ]]; do
+    if ./bin/riak_control.sh ensemble-status |grep "Active:.*true"; then
+        let RETRIES-=1
+        printf "."
+        sleep 1
+    else
+        RETRIES=0
+        echo ""
+    fi
+
 echo "test the riak cluster"
 ./bin/riak_test.sh
 assert_exit "test riak cluster"
