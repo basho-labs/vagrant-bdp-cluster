@@ -34,7 +34,7 @@ echo "create the riak cluster"
 assert_exit "create riak cluster"
 RETRIES=120
 while [[ $RETRIES > 0 ]]; do
-    if ./bin/riak_control.sh ensemble-status |grep "Active:.*true"; then
+    if ! ./bin/riak_control.sh ensemble-status |grep "Active:.*true" >/dev/null 2>&1; then
         let RETRIES-=1
         printf "."
         sleep 1
@@ -42,6 +42,7 @@ while [[ $RETRIES > 0 ]]; do
         RETRIES=0
         echo ""
     fi
+done
 
 echo "test the riak cluster"
 ./bin/riak_test.sh
