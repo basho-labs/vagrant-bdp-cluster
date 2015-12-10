@@ -1,4 +1,6 @@
 #! /bin/bash
+RETRY_DELAY=1
+
 function assert_exit () {
     local EXIT_CODE=$?
     local MESSAGE=$1
@@ -23,6 +25,8 @@ function retry_bdp_service_start() {
         STATUS_LINES=$(./bin/bdp_service_status.sh |grep "$SERVICE_CONFIG" |wc -l)
         if [[ "$STATUS_LINES" -ge "$EXPECTED_STATUS_LINES" ]]; then
             RETRIES=0
+        else
+            let RETRIES-=1
         fi
     done
     cat bdp_service_start.log
@@ -37,7 +41,7 @@ while [[ $RETRIES > 0 ]]; do
     if ! ./bin/riak_control.sh ensemble-status |grep "Active:.*true" >/dev/null 2>&1; then
         let RETRIES-=1
         printf "."
-        sleep 1
+        sleep $RETRY_DELAY
     else
         RETRIES=0
         echo ""
@@ -56,7 +60,7 @@ while [[ $RETRIES > 0 ]]; do
     if [[ $OUTPUT =~ "Node joined" ]]; then
         let RETRIES-=1
         printf "."
-        sleep 1
+        sleep $RETRY_DELAY
     else
         RETRIES=0
         echo ""
@@ -79,7 +83,7 @@ while [[ $RETRIES > 0 ]]; do
     else
         let RETRIES-=1
         printf "."
-        sleep 1
+        sleep $RETRY_DELAY
     fi
 done
 cat bdp_service_status.log
@@ -99,7 +103,7 @@ for i in `ls bin/*service_config_create.sh`;do
         if [[ $OUTPUT =~ 'failed!' ]]; then
             let RETRIES-=1
             printf "."
-            sleep 1
+            sleep $RETRY_DELAY
         else
             RETRIES=0
             echo ""

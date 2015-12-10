@@ -18,7 +18,7 @@ function riak_put () {
     local BUCKET=${1:-test}
     local KEY=${2:-foo}
     local VALUE=$3
-    curl -s -X PUT -d "$VALUE" "http://$RIAK_HEAD_IP:$RIAK_HTTP_PORT/buckets/$BUCKET/keys/$KEY"
+    curl -s -X PUT -H 'Content-Type: text/plain' -d "$VALUE" "http://$RIAK_HEAD_IP:$RIAK_HTTP_PORT/buckets/$BUCKET/keys/$KEY"
 }
 function riak_delete () {
     local BUCKET=${1:-test}

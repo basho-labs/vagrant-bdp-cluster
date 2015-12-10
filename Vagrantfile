@@ -54,22 +54,22 @@ $target_vm = ENV['TARGET_VM']
 $target_vm_variant = ENV['TARGET_VM_VARIANT']
 if $target_vm == 'centos'
   if $target_vm_variant == '7'
-    $vm_box = 'chef/centos-7.0'
+    $vm_box = 'bento/centos-7.1'
   else
-    $vm_box = 'chef/centos-6.5'
+    $vm_box = 'bento/centos-6.7'
   end
 elsif $target_vm == 'ubuntu'
   if $target_vm_variant == 'trusty'
-    $vm_box = 'chef/ubuntu-14.04'
+    $vm_box = 'bento/ubuntu-14.04'
   else
-    $vm_box = 'chef/ubuntu-12.04'
+    $vm_box = 'bento/ubuntu-12.04'
   end
 elsif $target_vm == 'debian'
   if $target_vm_variant == 'jessie'
-    $vm_box = 'chef/debian-8.0'
+    $vm_box = 'bento/debian-8.1'
     $target_vm_variant_equivalent = 'trusty'
   else
-    $vm_box = 'chef/debian-7.8'
+    $vm_box = 'bento/debian-7.8'
     $target_vm_variant_equivalent = 'precise'
   end
 elsif $target_vm == 'osx'
@@ -160,10 +160,10 @@ if [[ $(which data-platform-admin) == "" ]]; then
   echo "configuring riak"
   sudo sed --in-place=bak 's/distributed_cookie = .*/distributed_cookie = riak_bdp/' /etc/riak/riak.conf
   sudo sed --in-place=bak 's/nodename = .*/nodename = riak_bdp_#{node_number}@#{ip_address}/' /etc/riak/riak.conf
-  sudo sed --in-place=bak 's/listener.http.internal = .*/listener.http.internal = 0.0.0.0:8098/' /etc/riak/riak.conf
-  sudo sed --in-place=bak 's/listener.protobuf.internal = .*/listener.protobuf.internal = 0.0.0.0:8087/' /etc/riak/riak.conf
+  sudo sed --in-place=bak 's/listener.http.internal = .*/listener.http.internal = #{ip_address}:8098/' /etc/riak/riak.conf
+  sudo sed --in-place=bak 's/listener.protobuf.internal = .*/listener.protobuf.internal = #{ip_address}:8087/' /etc/riak/riak.conf
   sudo bash -c "# Added by Vagrant provisioning' >> /etc/riak/riak.conf"
-  sudo bash -c "echo 'handoff.ip = 0.0.0.0' >> /etc/riak/riak.conf"
+  sudo bash -c "echo 'handoff.ip = #{ip_address}' >> /etc/riak/riak.conf"
   if [[ "#{$oss}" -eq 0 ]]; then
     # leader election service is an EE feature
     sudo bash -c "echo 'listener.leader_latch.internal = #{ip_address}:5323' >> /etc/riak/riak.conf"
@@ -260,10 +260,10 @@ if [[ $(which data-platform-admin) == "" ]]; then
   echo "configuring riak"
   sudo sed --in-place=bak 's/distributed_cookie = .*/distributed_cookie = riak_bdp/' /etc/riak/riak.conf
   sudo sed --in-place=bak 's/nodename = .*/nodename = riak_bdp_#{node_number}@#{ip_address}/' /etc/riak/riak.conf
-  sudo sed --in-place=bak 's/listener.http.internal = .*/listener.http.internal = 0.0.0.0:8098/' /etc/riak/riak.conf
-  sudo sed --in-place=bak 's/listener.protobuf.internal = .*/listener.protobuf.internal = 0.0.0.0:8087/' /etc/riak/riak.conf
+  sudo sed --in-place=bak 's/listener.http.internal = .*/listener.http.internal = #{ip_address}:8098/' /etc/riak/riak.conf
+  sudo sed --in-place=bak 's/listener.protobuf.internal = .*/listener.protobuf.internal = #{ip_address}:8087/' /etc/riak/riak.conf
   sudo bash -c "# Added by Vagrant provisioning' >> /etc/riak/riak.conf"
-  sudo bash -c "echo 'handoff.ip = 0.0.0.0' >> /etc/riak/riak.conf"
+  sudo bash -c "echo 'handoff.ip = #{ip_address}' >> /etc/riak/riak.conf"
   if [[ "#{$oss}" -eq 0 ]]; then
     # leader election service is an EE feature
     sudo bash -c "echo 'listener.leader_latch.internal = #{ip_address}:5323' >> /etc/riak/riak.conf"
@@ -365,10 +365,10 @@ if [[ $(which data-platform-admin) == "" ]]; then
   echo "configuring riak"
   sudo sed --in-place=bak 's/distributed_cookie = .*/distributed_cookie = riak_bdp/' /etc/riak/riak.conf
   sudo sed --in-place=bak 's/nodename = .*/nodename = riak_bdp_#{node_number}@#{ip_address}/' /etc/riak/riak.conf
-  sudo sed --in-place=bak 's/listener.http.internal = .*/listener.http.internal = 0.0.0.0:8098/' /etc/riak/riak.conf
-  sudo sed --in-place=bak 's/listener.protobuf.internal = .*/listener.protobuf.internal = 0.0.0.0:8087/' /etc/riak/riak.conf
+  sudo sed --in-place=bak 's/listener.http.internal = .*/listener.http.internal = #{ip_address}:8098/' /etc/riak/riak.conf
+  sudo sed --in-place=bak 's/listener.protobuf.internal = .*/listener.protobuf.internal = #{ip_address}:8087/' /etc/riak/riak.conf
   sudo bash -c "# Added by Vagrant provisioning' >> /etc/riak/riak.conf"
-  sudo bash -c "echo 'handoff.ip = 0.0.0.0' >> /etc/riak/riak.conf"
+  sudo bash -c "echo 'handoff.ip = #{ip_address}' >> /etc/riak/riak.conf"
   if [[ "#{$oss}" -eq 0 ]]; then
     # leader election service is an EE feature
     sudo bash -c "echo 'listener.leader_latch.internal = #{ip_address}:5323' >> /etc/riak/riak.conf"
@@ -533,10 +533,10 @@ sudo dscl . -append /users/riak gid $(sudo dscl . -read /groups/riak gid |awk '{
   echo "configuring riak"
   sudo sed -i bak 's/distributed_cookie = .*/distributed_cookie = riak_bdp/' #{bdp_path}/etc/riak.conf
   sudo sed -i bak 's/nodename = .*/nodename = riak_bdp_#{node_number}@#{ip_address}/' #{bdp_path}/etc/riak.conf
-  sudo sed -i bak 's/listener.http.internal = .*/listener.http.internal = 0.0.0.0:8098/' #{bdp_path}/etc/riak.conf
-  sudo sed -i bak 's/listener.protobuf.internal = .*/listener.protobuf.internal = 0.0.0.0:8087/' #{bdp_path}/etc/riak.conf
+  sudo sed -i bak 's/listener.http.internal = .*/listener.http.internal = #{ip_address}:8098/' #{bdp_path}/etc/riak.conf
+  sudo sed -i bak 's/listener.protobuf.internal = .*/listener.protobuf.internal = #{ip_address}:8087/' #{bdp_path}/etc/riak.conf
   sudo bash -c "# Added by Vagrant provisioning' >> #{bdp_path}/etc/riak.conf"
-  sudo bash -c "echo 'handoff.ip = 0.0.0.0' >> #{bdp_path}/etc/riak.conf"
+  sudo bash -c "echo 'handoff.ip = #{ip_address}' >> #{bdp_path}/etc/riak.conf"
   if [[ "#{$oss}" -eq 0 ]]; then
     # leader election service is an EE feature
     sudo bash -c "echo 'listener.leader_latch.internal = #{ip_address}:5323' >> #{bdp_path}/etc/riak.conf"

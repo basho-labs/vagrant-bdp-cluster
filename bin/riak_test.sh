@@ -13,9 +13,9 @@ riak_delete "test" "foo"
 riak_get "test" "foo"
 assert "not found" "$RIAK_VALUE" "value at clean start"
 riak_put "test" "foo" "bar"
-riak_get "test" "foo"
 RETRIES=5
 while [[ $RETRIES > 0 ]]; do
+    riak_get "test" "foo"
     assert "bar" "$RIAK_VALUE" "value after put"
     if [[ $? == 0 ]]; then
         RETRIES=0
