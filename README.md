@@ -186,7 +186,8 @@ The smoke test tests each service with a minimal test that assures expected
 functionality.
 
 ## Keep up to date
-This Vagrant solution was developed and tested against the BDP 1.0 EE and OSS versions.
+This Vagrant solution was developed and tested against the BDP 1.1 EE and OSS versions.
+Testing of BDP 1.0 was also performed using this Vagrant solution.
 
 As BDP is being developed, you may need to update your local Vagrant setup via
 git pull.  If the Vagrant setup is out-of-date, it is highly suggested to
