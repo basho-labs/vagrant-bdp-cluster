@@ -122,6 +122,9 @@ EOF_LIMITS
 "
 fi
 
+# set hostname
+sudo sysctl kernel.hostname=#{ip_address}
+
 # install jdk 8
 if [[ $(which javac) == "" ]]; then
   echo "installing jdk 8"
@@ -162,6 +165,7 @@ if [[ $(which data-platform-admin) == "" ]]; then
   sudo sed --in-place=bak 's/nodename = .*/nodename = riak_bdp_#{node_number}@#{ip_address}/' /etc/riak/riak.conf
   sudo sed --in-place=bak 's/listener.http.internal = .*/listener.http.internal = #{ip_address}:8098/' /etc/riak/riak.conf
   sudo sed --in-place=bak 's/listener.protobuf.internal = .*/listener.protobuf.internal = #{ip_address}:8087/' /etc/riak/riak.conf
+  sudo sed --in-place=bak 's/## strong_consistency = on/strong_consistency = on/' /etc/riak/riak.conf
   sudo bash -c "# Added by Vagrant provisioning' >> /etc/riak/riak.conf"
   sudo bash -c "echo 'handoff.ip = #{ip_address}' >> /etc/riak/riak.conf"
   if [[ "#{$oss}" -eq 0 ]]; then
@@ -203,6 +207,9 @@ if [[ $(sysctl fs.file-max |grep 65536) == "" ]]; then
 EOF_LIMITS
 "
 fi
+
+# set hostname
+sudo sysctl kernel.hostname=#{ip_address}
 
 # install jdk 8
 if [[ $(which javac) == "" ]]; then
@@ -303,6 +310,9 @@ if [[ $(sysctl fs.file-max |grep 65536) == "" ]]; then
 EOF_LIMITS
 "
 fi
+
+# set hostname
+sudo sysctl kernel.hostname=#{ip_address}
 
 # install jdk 8
 if [[ $(which javac) == "" ]]; then
