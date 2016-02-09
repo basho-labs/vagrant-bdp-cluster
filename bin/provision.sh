@@ -54,9 +54,11 @@ parallel_provision () {
 mkdir logs >/dev/null 2>&1
 rm -f logs/*.out.txt
 
-# ensure OSX box is present, if needed
-if ! vagrant box list |grep osx >/dev/null 2>&1; then
-    vagrant box add http://files.dryga.com/boxes/osx-yosemite-0.2.1.box --name osx-yosemite
+if [ x$TARGET_VM = 'xosx' ]; then
+    # ensure OSX box is present, if needed
+    if ! vagrant box list |grep osx >/dev/null 2>&1; then
+        vagrant box add http://files.dryga.com/boxes/osx-yosemite-0.2.1.box --name osx-yosemite
+    fi
 fi
 
 # start boxes sequentially to avoid vbox explosions
